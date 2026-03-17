@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://legislative-parser-v2.onrender.com/api/"
+      "destination": "https://legislative-parser-v2.onrender.com/api/:path*"
     }
   ]
 }
