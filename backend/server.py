@@ -37,11 +37,13 @@ app = FastAPI(
     version="2.0.0",
 )
 
-# CORS – allow configurable frontend origin
+# CORS – allow configurable frontend origins (comma-separated in env)
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+allowed_origins = [u.strip() for u in FRONTEND_URL.split(",")]
+allowed_origins.extend(["http://localhost:3000", "http://localhost:5173"])
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL, "http://localhost:3000", "http://localhost:5173"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -107,9 +109,6 @@ async def extract(req: ExtractionRequest):
     Accept ordinance text, run LLM extraction, validate with Pydantic,
     and return the structured result.
     """
-    from dotenv import load_dotenv
-    load_dotenv()
-    logger.info("Received extraction request: %s", req.legislative_text[:50])
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         raise HTTPException(

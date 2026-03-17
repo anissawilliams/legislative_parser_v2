@@ -173,52 +173,112 @@ function SectionHeading({ children }) {
   );
 }
 
-function Accordion({ title, children, defaultOpen = false }) {
-  const [open, setOpen] = useState(defaultOpen);
+function EditableText({ value, onChange, multiline = false, placeholder = "" }) {
+  const style = {
+    width: "100%",
+    padding: "8px 12px",
+    borderRadius: 6,
+    border: `1px solid ${c.borderLight}`,
+    background: c.bg,
+    color: c.text,
+    fontSize: 14,
+    lineHeight: 1.7,
+    fontFamily: FONT,
+    outline: "none",
+    boxSizing: "border-box",
+    transition: "border-color 0.15s",
+    resize: multiline ? "vertical" : "none",
+  };
+  if (multiline) {
+    return (
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={3}
+        style={{ ...style, minHeight: 60 }}
+        onFocus={(e) => (e.target.style.borderColor = c.accent)}
+        onBlur={(e) => (e.target.style.borderColor = c.borderLight)}
+      />
+    );
+  }
   return (
-    <div
-      style={{
-        border: `1px solid ${c.border}`,
-        borderRadius: 8,
-        marginBottom: 8,
-        background: c.white,
-        overflow: "hidden",
-      }}
-    >
-      <button
-        onClick={() => setOpen(!open)}
-        style={{
-          width: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "14px 18px",
-          border: "none",
-          background: "none",
-          cursor: "pointer",
-          fontFamily: FONT,
-          fontSize: 14,
-          fontWeight: 500,
-          color: c.text,
-          textAlign: "left",
-        }}
-      >
-        {title}
-        <span
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      style={style}
+      onFocus={(e) => (e.target.style.borderColor = c.accent)}
+      onBlur={(e) => (e.target.style.borderColor = c.borderLight)}
+    />
+  );
+}
+
+function EditableList({ items, onChange }) {
+  if (!items || items.length === 0) return null;
+  const isDefault = items.length === 1 && items[0].toLowerCase().startsWith("no ");
+
+  const updateItem = (idx, val) => {
+    const next = [...items];
+    next[idx] = val;
+    onChange(next);
+  };
+  const removeItem = (idx) => {
+    const next = items.filter((_, i) => i !== idx);
+    onChange(next.length > 0 ? next : ["Not specified."]);
+  };
+  const addItem = () => onChange([...items, ""]);
+
+  return (
+    <div>
+      {items.map((item, i) => (
+        <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "flex-start" }}>
+          <textarea
+            value={item}
+            onChange={(e) => updateItem(i, e.target.value)}
+            rows={1}
+            style={{
+              flex: 1, padding: "8px 12px", borderRadius: 6,
+              border: `1px solid ${c.borderLight}`, background: c.bg,
+              color: isDefault ? c.muted : c.text, fontSize: 14, lineHeight: 1.6,
+              fontFamily: FONT, outline: "none", boxSizing: "border-box",
+              resize: "vertical", minHeight: 38,
+              fontStyle: isDefault ? "italic" : "normal",
+              transition: "border-color 0.15s",
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = c.accent;
+              if (isDefault) { onChange([""]); }
+            }}
+            onBlur={(e) => (e.target.style.borderColor = c.borderLight)}
+          />
+          {!isDefault && (
+            <button
+              onClick={() => removeItem(i)}
+              style={{
+                padding: "8px 10px", borderRadius: 6, border: `1px solid ${c.border}`,
+                background: c.white, color: c.dim, fontSize: 13, cursor: "pointer",
+                fontFamily: FONT, flexShrink: 0,
+              }}
+              title="Remove"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      ))}
+      {!isDefault && (
+        <button
+          onClick={addItem}
           style={{
-            color: c.dim,
-            fontSize: 18,
-            transition: "transform 0.2s",
-            transform: open ? "rotate(90deg)" : "rotate(0deg)",
+            padding: "6px 14px", borderRadius: 6, border: `1px dashed ${c.border}`,
+            background: "none", color: c.muted, fontSize: 13, cursor: "pointer",
+            fontFamily: FONT, marginTop: 4,
           }}
         >
-          ›
-        </span>
-      </button>
-      {open && (
-        <div style={{ padding: "0 18px 16px", borderTop: `1px solid ${c.borderLight}` }}>
-          <div style={{ paddingTop: 12 }}>{children}</div>
-        </div>
+          + Add item
+        </button>
       )}
     </div>
   );
@@ -340,12 +400,18 @@ export default function App() {
   const [view, setView] = useState("input");
   const [text, setText] = useState("");
   const [result, setResult] = useState(null);
+  const [editDoc, setEditDoc] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [tab, setTab] = useState("overview");
   const ref = useRef(null);
 
   const canSubmit = !loading && text.trim().length >= 50;
+
+  // Helper to update a single field on the editable doc
+  const updateField = (field, value) => {
+    setEditDoc((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleExtract = useCallback(async () => {
     if (!canSubmit) return;
@@ -358,6 +424,7 @@ export default function App() {
         body: JSON.stringify({ legislative_text: text }),
       });
       setResult(data);
+      setEditDoc(JSON.parse(JSON.stringify(data.document)));
       setTab("overview");
       setView("results");
     } catch (err) {
@@ -379,18 +446,18 @@ export default function App() {
   }, [handleExtract]);
 
   const handleDownload = () => {
-    if (!result) return;
-    const blob = new Blob([JSON.stringify(result.document, null, 2)], { type: "application/json" });
+    if (!editDoc) return;
+    const blob = new Blob([JSON.stringify(editDoc, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    const name = result.document?.jurisdiction || "extraction";
+    const name = editDoc?.jurisdiction || "extraction";
     a.download = `${name.replace(/\s+/g, "_").toLowerCase()}_ordinance.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
-  const doc = result?.document;
+  const doc = editDoc;
 
   const getRegTypes = () => {
     if (!doc?.rule_signals) return [];
@@ -427,7 +494,7 @@ export default function App() {
           )}
         </header>
 
-        <div style={{ maxWidth: 840, margin: "40px auto", padding: "0 24px" }}>
+        <div style={{ maxWidth: 1000, margin: "40px auto", padding: "0 24px" }}>
           <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Extract Ordinance Data</h1>
           <p style={{ fontSize: 14, color: c.muted, marginBottom: 24 }}>
             Paste legislative text below to extract structured data using AI.
@@ -456,7 +523,7 @@ export default function App() {
               placeholder="Paste ordinance text here…"
               spellCheck={false}
               style={{
-                width: "100%", minHeight: 340, resize: "vertical", padding: 16, borderRadius: 8,
+                width: "100%", minHeight: 480, resize: "vertical", padding: 16, borderRadius: 8,
                 border: `1px solid ${c.border}`, background: c.bg, color: c.text, fontSize: 13,
                 lineHeight: 1.7, fontFamily: MONO, outline: "none", boxSizing: "border-box",
                 transition: "border-color 0.15s",
@@ -535,7 +602,7 @@ export default function App() {
         </div>
       </header>
 
-      <div style={{ display: "flex", maxWidth: 1200, margin: "0 auto", padding: "32px 24px", gap: 32 }}>
+      <div style={{ display: "flex", maxWidth: 1440, margin: "0 auto", padding: "32px 24px", gap: 32 }}>
         {/* SIDEBAR */}
         <div style={{ width: 240, flexShrink: 0 }}>
           <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: "20px 20px 12px" }}>
@@ -599,31 +666,31 @@ export default function App() {
             <div>
               <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
                 <SectionHeading>Regulation Overview</SectionHeading>
-                <p style={{ fontSize: 14, color: c.textSecondary, lineHeight: 1.7, margin: 0 }}>{doc.overview}</p>
+                <EditableText value={doc.overview} onChange={(v) => updateField("overview", v)} multiline placeholder="Overview…" />
               </div>
               <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
                 <SectionHeading>Key Provisions</SectionHeading>
-                <BulletList items={doc.provisions} />
+                <EditableList items={doc.provisions} onChange={(v) => updateField("provisions", v)} />
               </div>
               <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
                 <SectionHeading>Prohibited Items</SectionHeading>
-                <BulletList items={doc.prohibited_items} />
+                <EditableList items={doc.prohibited_items} onChange={(v) => updateField("prohibited_items", v)} />
               </div>
               <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
                 <SectionHeading>Required Alternatives</SectionHeading>
-                <BulletList items={doc.required_alternatives} />
+                <EditableList items={doc.required_alternatives} onChange={(v) => updateField("required_alternatives", v)} />
               </div>
               <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
                 <SectionHeading>Exemptions</SectionHeading>
-                <BulletList items={doc.exemptions} />
+                <EditableList items={doc.exemptions} onChange={(v) => updateField("exemptions", v)} />
               </div>
               <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
                 <SectionHeading>Penalties</SectionHeading>
-                <p style={{ fontSize: 14, color: c.textSecondary, lineHeight: 1.7, margin: 0 }}>{doc.penalties}</p>
+                <EditableText value={doc.penalties} onChange={(v) => updateField("penalties", v)} multiline placeholder="Penalties…" />
               </div>
               <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24 }}>
                 <SectionHeading>Enforcement Agency</SectionHeading>
-                <p style={{ fontSize: 14, color: c.textSecondary, margin: 0 }}>{doc.enforcement_agency}</p>
+                <EditableText value={doc.enforcement_agency} onChange={(v) => updateField("enforcement_agency", v)} placeholder="Agency name…" />
               </div>
             </div>
           )}
@@ -633,22 +700,28 @@ export default function App() {
             <div>
               <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
                 <SectionHeading>Covered Establishments</SectionHeading>
-                <BulletList items={doc.covered_establishments} />
+                <EditableList items={doc.covered_establishments} onChange={(v) => updateField("covered_establishments", v)} />
               </div>
               <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
                 <SectionHeading>SKU Types</SectionHeading>
-                <BulletList items={doc.SKU_types} />
+                <EditableList items={doc.SKU_types} onChange={(v) => updateField("SKU_types", v)} />
               </div>
-              <SectionHeading>Detailed Requirements</SectionHeading>
-              <Accordion title="Labeling Requirements">
-                <BulletList items={doc.labeling_requirements} />
-              </Accordion>
-              <Accordion title="Utensils and Accessories Requirements">
-                <BulletList items={doc.utensils_and_accessories_requirements} />
-              </Accordion>
-              <Accordion title="Operational Requirements">
-                <BulletList items={doc.operational_requirements} />
-              </Accordion>
+              <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
+                <SectionHeading>Labeling Requirements</SectionHeading>
+                <EditableList items={doc.labeling_requirements} onChange={(v) => updateField("labeling_requirements", v)} />
+              </div>
+              <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
+                <SectionHeading>Utensils and Accessories Requirements</SectionHeading>
+                <EditableList items={doc.utensils_and_accessories_requirements} onChange={(v) => updateField("utensils_and_accessories_requirements", v)} />
+              </div>
+              <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
+                <SectionHeading>Operational Requirements</SectionHeading>
+                <EditableList items={doc.operational_requirements} onChange={(v) => updateField("operational_requirements", v)} />
+              </div>
+              <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24 }}>
+                <SectionHeading>Phase-in Dates</SectionHeading>
+                <EditableList items={doc.phase_in_dates} onChange={(v) => updateField("phase_in_dates", v)} />
+              </div>
             </div>
           )}
 
