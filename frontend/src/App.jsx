@@ -413,14 +413,6 @@ export default function App() {
     setEditDoc((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Helper to update a nested sub-model field (e.g., food_service_ware_rules.prohibited_materials)
-  const updateNested = (parent, field, value) => {
-    setEditDoc((prev) => ({
-      ...prev,
-      [parent]: { ...prev[parent], [field]: value },
-    }));
-  };
-
   const handleExtract = useCallback(async () => {
     if (!canSubmit) return;
     setLoading(true);
@@ -592,8 +584,6 @@ export default function App() {
 
   const regTypes = getRegTypes();
 
-  const cardStyle = { background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 };
-
   return (
     <div style={{ minHeight: "100vh", background: c.bg, fontFamily: FONT, color: c.text }}>
       <header style={{ background: c.white, borderBottom: `1px solid ${c.border}`, padding: "12px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -658,14 +648,10 @@ export default function App() {
             <StatusBadge variant="green">Active</StatusBadge>
           </div>
 
-          <div style={{ display: "flex", borderBottom: `1px solid ${c.border}`, marginBottom: 24, background: c.white, borderRadius: "8px 8px 0 0", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", borderBottom: `1px solid ${c.border}`, marginBottom: 24, background: c.white, borderRadius: "8px 8px 0 0" }}>
             {[
               ["overview", "Overview"],
-              ["foodware", "Food Service Ware"],
-              ["accessories", "Accessories"],
-              ["platforms", "Platforms & Delivery"],
-              ["records", "Record Keeping"],
-              ["requirements", "Other Requirements"],
+              ["requirements", "Requirements"],
               ["signals", "Signals"],
               ["logic", "Regulatory Logic"],
               ["validation", `Validation (${result.issues?.length || 0})`],
@@ -678,151 +664,61 @@ export default function App() {
           {/* OVERVIEW */}
           {tab === "overview" && (
             <div>
-              <div style={cardStyle}>
+              <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
                 <SectionHeading>Regulation Overview</SectionHeading>
                 <EditableText value={doc.overview} onChange={(v) => updateField("overview", v)} multiline placeholder="Overview…" />
               </div>
-              <div style={cardStyle}>
+              <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
                 <SectionHeading>Key Provisions</SectionHeading>
                 <EditableList items={doc.provisions} onChange={(v) => updateField("provisions", v)} />
               </div>
-              <div style={cardStyle}>
-                <SectionHeading>Covered Establishments</SectionHeading>
-                <EditableList items={doc.covered_establishments} onChange={(v) => updateField("covered_establishments", v)} />
+              <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
+                <SectionHeading>Prohibited Items</SectionHeading>
+                <EditableList items={doc.prohibited_items} onChange={(v) => updateField("prohibited_items", v)} />
               </div>
-              <div style={cardStyle}>
+              <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
+                <SectionHeading>Required Alternatives</SectionHeading>
+                <EditableList items={doc.required_alternatives} onChange={(v) => updateField("required_alternatives", v)} />
+              </div>
+              <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
                 <SectionHeading>Exemptions</SectionHeading>
                 <EditableList items={doc.exemptions} onChange={(v) => updateField("exemptions", v)} />
               </div>
-              <div style={cardStyle}>
+              <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
                 <SectionHeading>Penalties</SectionHeading>
                 <EditableText value={doc.penalties} onChange={(v) => updateField("penalties", v)} multiline placeholder="Penalties…" />
               </div>
-              <div style={{ ...cardStyle, marginBottom: 0 }}>
+              <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24 }}>
                 <SectionHeading>Enforcement Agency</SectionHeading>
                 <EditableText value={doc.enforcement_agency} onChange={(v) => updateField("enforcement_agency", v)} placeholder="Agency name…" />
               </div>
             </div>
           )}
 
-          {/* FOOD SERVICE WARE */}
-          {tab === "foodware" && (
-            <div>
-              <div style={cardStyle}>
-                <SectionHeading>Prohibited Materials</SectionHeading>
-                <p style={{ fontSize: 12, color: c.muted, marginBottom: 8 }}>Materials banned for food service ware (plates, bowls, cups, trays, containers).</p>
-                <EditableList items={doc.food_service_ware_rules?.prohibited_materials} onChange={(v) => updateNested("food_service_ware_rules", "prohibited_materials", v)} />
-              </div>
-              <div style={cardStyle}>
-                <SectionHeading>Required Alternatives</SectionHeading>
-                <p style={{ fontSize: 12, color: c.muted, marginBottom: 8 }}>What food service ware must be made of instead.</p>
-                <EditableList items={doc.food_service_ware_rules?.required_alternatives} onChange={(v) => updateNested("food_service_ware_rules", "required_alternatives", v)} />
-              </div>
-              <div style={cardStyle}>
-                <SectionHeading>Covered Items</SectionHeading>
-                <p style={{ fontSize: 12, color: c.muted, marginBottom: 8 }}>Specific ware items covered by these rules.</p>
-                <EditableList items={doc.food_service_ware_rules?.covered_items} onChange={(v) => updateNested("food_service_ware_rules", "covered_items", v)} />
-              </div>
-              <div style={cardStyle}>
-                <SectionHeading>PFAS Requirement</SectionHeading>
-                <EditableText value={doc.food_service_ware_rules?.pfas_requirement || "Not specified"} onChange={(v) => updateNested("food_service_ware_rules", "pfas_requirement", v)} multiline />
-              </div>
-              <div style={{ ...cardStyle, marginBottom: 0 }}>
-                <SectionHeading>Exempt Items</SectionHeading>
-                <p style={{ fontSize: 12, color: c.muted, marginBottom: 8 }}>Ware items explicitly exempt from these rules.</p>
-                <EditableList items={doc.food_service_ware_rules?.exempt_items} onChange={(v) => updateNested("food_service_ware_rules", "exempt_items", v)} />
-              </div>
-            </div>
-          )}
-
-          {/* ACCESSORIES */}
-          {tab === "accessories" && (
-            <div>
-              <div style={cardStyle}>
-                <SectionHeading>Upon Request Rule</SectionHeading>
-                <p style={{ fontSize: 12, color: c.muted, marginBottom: 8 }}>Whether accessories may only be provided upon specific customer request.</p>
-                <EditableText value={doc.food_service_ware_accessory_rules?.upon_request_rule || "Not specified"} onChange={(v) => updateNested("food_service_ware_accessory_rules", "upon_request_rule", v)} multiline />
-              </div>
-              <div style={cardStyle}>
-                <SectionHeading>Unbundling Requirement</SectionHeading>
-                <p style={{ fontSize: 12, color: c.muted, marginBottom: 8 }}>Must accessories be distributed as separate individual units (not pre-bundled)?</p>
-                <EditableText value={doc.food_service_ware_accessory_rules?.unbundling_requirement || "Not specified"} onChange={(v) => updateNested("food_service_ware_accessory_rules", "unbundling_requirement", v)} multiline />
-              </div>
-              <div style={cardStyle}>
-                <SectionHeading>Self-Service Dispenser Rules</SectionHeading>
-                <p style={{ fontSize: 12, color: c.muted, marginBottom: 8 }}>Rules for self-service dispensers (e.g., one-at-a-time dispensing).</p>
-                <EditableText value={doc.food_service_ware_accessory_rules?.self_service_dispenser_rules || "Not specified"} onChange={(v) => updateNested("food_service_ware_accessory_rules", "self_service_dispenser_rules", v)} multiline />
-              </div>
-              <div style={cardStyle}>
-                <SectionHeading>Drive-Through / Walk-In Rules</SectionHeading>
-                <p style={{ fontSize: 12, color: c.muted, marginBottom: 8 }}>Special rules for drive-through or walk-in consumers.</p>
-                <EditableText value={doc.food_service_ware_accessory_rules?.drive_through_rules || "Not specified"} onChange={(v) => updateNested("food_service_ware_accessory_rules", "drive_through_rules", v)} multiline />
-              </div>
-              <div style={{ ...cardStyle, marginBottom: 0 }}>
-                <SectionHeading>Covered Accessories</SectionHeading>
-                <p style={{ fontSize: 12, color: c.muted, marginBottom: 8 }}>Specific accessory items covered (utensils, straws, lids, condiments, etc.).</p>
-                <EditableList items={doc.food_service_ware_accessory_rules?.covered_accessories} onChange={(v) => updateNested("food_service_ware_accessory_rules", "covered_accessories", v)} />
-              </div>
-            </div>
-          )}
-
-          {/* PLATFORMS & DELIVERY */}
-          {tab === "platforms" && (
-            <div>
-              <div style={cardStyle}>
-                <SectionHeading>Delivery Service Rules</SectionHeading>
-                <p style={{ fontSize: 12, color: c.muted, marginBottom: 8 }}>Requirements when using third-party takeout/delivery services.</p>
-                <EditableText value={doc.third_party_platform_rules?.delivery_service_rules || "Not specified"} onChange={(v) => updateNested("third_party_platform_rules", "delivery_service_rules", v)} multiline />
-              </div>
-              <div style={cardStyle}>
-                <SectionHeading>Digital Ordering Default</SectionHeading>
-                <p style={{ fontSize: 12, color: c.muted, marginBottom: 8 }}>Default setting for digital ordering / POS platforms (e.g., default to no accessories).</p>
-                <EditableText value={doc.third_party_platform_rules?.digital_ordering_default || "Not specified"} onChange={(v) => updateNested("third_party_platform_rules", "digital_ordering_default", v)} multiline />
-              </div>
-              <div style={{ ...cardStyle, marginBottom: 0 }}>
-                <SectionHeading>Itemized Selection Requirement</SectionHeading>
-                <p style={{ fontSize: 12, color: c.muted, marginBottom: 8 }}>Must platforms provide itemized selection of accessories and condiments?</p>
-                <EditableText value={doc.third_party_platform_rules?.itemized_selection_requirement || "Not specified"} onChange={(v) => updateNested("third_party_platform_rules", "itemized_selection_requirement", v)} multiline />
-              </div>
-            </div>
-          )}
-
-          {/* RECORD KEEPING */}
-          {tab === "records" && (
-            <div>
-              <div style={cardStyle}>
-                <SectionHeading>Record Requirement</SectionHeading>
-                <p style={{ fontSize: 12, color: c.muted, marginBottom: 8 }}>What records must facilities maintain?</p>
-                <EditableText value={doc.record_keeping_rules?.record_requirement || "Not specified"} onChange={(v) => updateNested("record_keeping_rules", "record_requirement", v)} multiline />
-              </div>
-              <div style={cardStyle}>
-                <SectionHeading>Retention Period</SectionHeading>
-                <EditableText value={doc.record_keeping_rules?.retention_period || "Not specified"} onChange={(v) => updateNested("record_keeping_rules", "retention_period", v)} />
-              </div>
-              <div style={{ ...cardStyle, marginBottom: 0 }}>
-                <SectionHeading>Inspection Access</SectionHeading>
-                <p style={{ fontSize: 12, color: c.muted, marginBottom: 8 }}>Who may inspect records and when?</p>
-                <EditableText value={doc.record_keeping_rules?.inspection_access || "Not specified"} onChange={(v) => updateNested("record_keeping_rules", "inspection_access", v)} multiline />
-              </div>
-            </div>
-          )}
-
-          {/* OTHER REQUIREMENTS */}
+          {/* REQUIREMENTS */}
           {tab === "requirements" && (
             <div>
-              <div style={cardStyle}>
+              <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
+                <SectionHeading>Covered Establishments</SectionHeading>
+                <EditableList items={doc.covered_establishments} onChange={(v) => updateField("covered_establishments", v)} />
+              </div>
+              <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
                 <SectionHeading>SKU Types</SectionHeading>
                 <EditableList items={doc.SKU_types} onChange={(v) => updateField("SKU_types", v)} />
               </div>
-              <div style={cardStyle}>
+              <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
                 <SectionHeading>Labeling Requirements</SectionHeading>
                 <EditableList items={doc.labeling_requirements} onChange={(v) => updateField("labeling_requirements", v)} />
               </div>
-              <div style={cardStyle}>
+              <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
+                <SectionHeading>Utensils and Accessories Requirements</SectionHeading>
+                <EditableList items={doc.utensils_and_accessories_requirements} onChange={(v) => updateField("utensils_and_accessories_requirements", v)} />
+              </div>
+              <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24, marginBottom: 24 }}>
                 <SectionHeading>Operational Requirements</SectionHeading>
                 <EditableList items={doc.operational_requirements} onChange={(v) => updateField("operational_requirements", v)} />
               </div>
-              <div style={{ ...cardStyle, marginBottom: 0 }}>
+              <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24 }}>
                 <SectionHeading>Phase-in Dates</SectionHeading>
                 <EditableList items={doc.phase_in_dates} onChange={(v) => updateField("phase_in_dates", v)} />
               </div>
@@ -831,7 +727,7 @@ export default function App() {
 
           {/* SIGNALS */}
           {tab === "signals" && (
-            <div style={{ ...cardStyle, marginBottom: 0 }}>
+            <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24 }}>
               <SignalGrid signals={doc.rule_signals} title="Rule Signals" />
               <SignalGrid signals={doc.legislative_text_signals} title="Legislative Text Signals" />
             </div>
@@ -843,13 +739,13 @@ export default function App() {
               <div style={{ fontSize: 13, color: c.muted, marginBottom: 12 }}>{doc.regulatory_logic?.length || 0} rule(s) extracted</div>
               {doc.regulatory_logic?.length > 0
                 ? doc.regulatory_logic.map((rule, i) => <RuleCard key={i} rule={rule} />)
-                : <div style={{ ...cardStyle, color: c.muted, fontSize: 14, marginBottom: 0 }}>No regulatory logic rules extracted.</div>}
+                : <div style={{ padding: 24, background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, color: c.muted, fontSize: 14 }}>No regulatory logic rules extracted.</div>}
             </div>
           )}
 
           {/* VALIDATION */}
           {tab === "validation" && (
-            <div style={{ ...cardStyle, marginBottom: 0 }}>
+            <div style={{ background: c.white, borderRadius: 10, border: `1px solid ${c.border}`, padding: 24 }}>
               <SectionHeading>Validation Results</SectionHeading>
               <ValidationPanel issues={result.issues} />
             </div>
