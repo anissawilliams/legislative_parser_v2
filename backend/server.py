@@ -62,7 +62,7 @@ class ExtractionRequest(BaseModel):
         description="The full text of the ordinance to parse.",
     )
     model: str = Field(
-        default="claude-sonnet-4-6",
+        default="claude-sonnet-4-20250514",
         description="Anthropic model to use for extraction.",
     )
 
